@@ -1,0 +1,15 @@
+name: nlp
+channels:
+  - conda-forge
+  - huggingface
+dependencies:
+  - python=3.9
+  - black
+  - ipython
+  - pytorch>=1.8
+  - tqdm
+  - numpy
+  - pandas
+  - pytest
+
+prefix: /usr/local/anaconda3/envs/nlp

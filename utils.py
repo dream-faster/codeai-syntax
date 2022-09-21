@@ -9,7 +9,6 @@ import numpy as np
 def to_token_list(s: str) -> List:
     tokens = []  # list of tokens extracted from source code.
 
-    print(s)
     g = tokenize(BytesIO(s.encode("utf-8")).readline)
     for t in g:
 
@@ -23,7 +22,14 @@ def to_token_list(s: str) -> List:
     return list(tokens)
 
 
-def write_tokens(
+def read_all_files(path: str, name: str) -> pd.DataFrame:
+    df = pd.DataFrame([])
+    for i in range(5):
+        df = pd.concat([df, pd.read_json(f"{path}/{name}{i}.json")])
+    return df
+
+
+def write_dataframe(
     df: pd.DataFrame,
     path: str,
     name: str,
