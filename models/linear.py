@@ -2,14 +2,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from mopi.type import PytorchConfig
+from type import PytorchConfig
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-class Decoder(nn.Module):
+class Linear(nn.Module):
     def __init__(self, config: PytorchConfig):
-        super(Decoder, self).__init__()
+        super(Linear, self).__init__()
 
         self.id = id
         self.hidden_size = config.hidden_size

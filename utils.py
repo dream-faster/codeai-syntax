@@ -4,6 +4,7 @@ from typing import List, Optional
 import pandas as pd
 import token
 import numpy as np
+import os
 
 
 def to_token_list(s: str) -> List:
@@ -22,9 +23,14 @@ def to_token_list(s: str) -> List:
     return list(tokens)
 
 
-def read_all_files(path: str, name: str) -> pd.DataFrame:
+def read_all_files(
+    path: str, name: str, extension: str = "json", limit_files: Optional[int] = None
+) -> pd.DataFrame:
+    lst = [file for file in os.listdir(path) if file.split(".")[-1] == extension]
+    number_files = len(lst) if limit_files is None else min(limit_files, len(lst))
+
     df = pd.DataFrame([])
-    for i in range(5):
+    for i in range(number_files):
         df = pd.concat([df, pd.read_json(f"{path}/{name}{i}.json")])
     return df
 

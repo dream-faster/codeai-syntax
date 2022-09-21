@@ -1,44 +1,37 @@
 from typing import Optional
-
+from dataclasses import dataclass
 import pandas as pd
 import pytorch_lightning as pl
 import torch
 from torch import nn
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, random_split
-
-from mopi.blocks.models.base import Model
-from mopi.constants import Const
-from mopi.type import DataType, Evaluators, PytorchConfig
-
-from .decoder import Decoder
+from constants import CONST
+from .linear import Linear
+from type import Evaluators, PytorchConfig
 
 
-class PytorchModel(Model):
-
-    inputTypes = DataType.Series
-    outputType = DataType.PredictionsWithProbs
-
+class PytorchModel:
     def __init__(
-        self, id: str, config: PytorchConfig, evaluators: Optional[Evaluators] = None
+        self,
+        id: str,
+        config: PytorchConfig,
+        model: nn.Module,
+        evaluators: Optional[Evaluators] = None,
     ):
         self.config = config
         self.id = id
-        self.model = None
+        self.model = LightningWrapper(model(self.config))
         self.evaluators: Optional[Evaluators] = evaluators
 
     def load(self) -> None:
-        self.model = LightningWrapper(Decoder(self.config))
-        torch.manual_seed(Const.seed)
-        return super().load()
+        torch.manual_seed(CONST.seed)
 
     def fit(self, dataset: pd.Series, labels: Optional[pd.Series]) -> None:
-        dataset = pd.DataFrame(
-            {Const.input_col: dataset[Const.input_col], Const.label_col: labels}
-        )
         val_size = int(len(dataset) * self.config.val_size)
         train_size = len(dataset) - val_size
         train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
+
         train_dataloader = DataLoader(train_dataset, batch_size=32)
         val_dataloader = DataLoader(val_dataset, batch_size=32)
 
@@ -55,7 +48,7 @@ class PytorchModel(Model):
 
 
 class LightningWrapper(pl.LightningModule):
-    def __init__(self, model: PytorchModel):
+    def __init__(self, model):
         super().__init__()
         self.model = model
 
