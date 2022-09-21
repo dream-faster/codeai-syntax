@@ -28,10 +28,13 @@ def collate_fn_padd(
     lengths = torch.tensor([len(t) for t in features]).to(device)
 
     ## padd
-    features = [torch.Tensor(t).type(torch.long).to(device) for t in features]
+    features = [torch.tensor(t).type(torch.long).to(device) for t in features]
     features = torch.nn.utils.rnn.pad_sequence(features).T
     labels = torch.Tensor(labels).type(torch.long).to(device).T
 
+    features.names = ("batch", "source_tokens")
+    lengths.names = ("batch",)
+    labels.names = ("batch",)
     # mask = (features != 0).to(device)
     return features, labels, lengths
 
@@ -93,8 +96,7 @@ class LightningWrapper(pl.LightningModule):
         return optimizer
 
     def training_step(self, train_batch, batch_idx):
-        x, y = train_batch
-        x = x.view(x.size(0), -1)
+        x, y, length = train_batch
         x_hat = self.model(x)
         loss = F.mse_loss(x_hat, y)
         self.log("train_loss", loss)
@@ -102,7 +104,6 @@ class LightningWrapper(pl.LightningModule):
 
     def validation_step(self, val_batch, batch_idx):
         x, y, length = val_batch
-        x = x.view(x.size(0), -1)
         x_hat = self.model(x)
         loss = F.mse_loss(x_hat, y)
         self.log("val_loss", loss)

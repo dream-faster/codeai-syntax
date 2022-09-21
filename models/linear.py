@@ -19,10 +19,12 @@ class Linear(nn.Module):
         self.logsoftmax = nn.LogSoftmax(dim=2)
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
+        input = input.rename(None)
         output = self.embedding(input)
         output = F.relu(output)
+        output.names = ("batch", "source_tokens", "embeddings")
         output = self.logsoftmax(self.out(output))
-        return output
+        return torch.argmax(output, dim=2)
 
     def initHidden(self) -> torch.Tensor:
         return torch.zeros(1, 1, self.hidden_size, device=device)
