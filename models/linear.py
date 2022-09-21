@@ -8,21 +8,21 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class Linear(nn.Module):
-    def __init__(self, config: PytorchConfig):
+    def __init__(self, config: PytorchConfig) -> None:
         super(Linear, self).__init__()
 
         self.id = id
         self.hidden_size = config.hidden_size
 
-        self.embedding = nn.Embedding(config.output_size, config.hidden_size)
+        self.embedding = nn.Embedding(config.dictionary_size, config.hidden_size)
         self.out = nn.Linear(config.hidden_size, config.output_size)
-        self.softmax = nn.LogSoftmax(dim=1)
+        self.logsoftmax = nn.LogSoftmax(dim=2)
 
-    def forward(self, input):
-        output = self.embedding(input).view(1, 1, -1)
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
+        output = self.embedding(input)
         output = F.relu(output)
-        output = self.softmax(self.out(output[0]))
+        output = self.logsoftmax(self.out(output))
         return output
 
-    def initHidden(self):
+    def initHidden(self) -> torch.Tensor:
         return torch.zeros(1, 1, self.hidden_size, device=device)

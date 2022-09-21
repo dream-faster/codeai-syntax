@@ -5,10 +5,35 @@ import pytorch_lightning as pl
 import torch
 from torch import nn
 from torch.nn import functional as F
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader, random_split, Dataset
 from constants import CONST
 from .linear import Linear
 from type import Evaluators, PytorchConfig
+from typing import List, Tuple
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+def collate_fn_padd(
+    batch: List[Tuple[List[int], float]]
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """
+    Padds batch of variable length
+
+    note: it converts things ToTensor manually here since the ToTensor transform
+    assume it takes in images rather than arbitrary tensors.
+    """
+    features, labels = zip(*batch)
+    ## get sequence lengths
+    lengths = torch.tensor([len(t) for t in features]).to(device)
+
+    ## padd
+    features = [torch.Tensor(t).type(torch.long).to(device) for t in features]
+    features = torch.nn.utils.rnn.pad_sequence(features).T
+    labels = torch.Tensor(labels).type(torch.long).to(device).T
+
+    # mask = (features != 0).to(device)
+    return features, labels, lengths
 
 
 class PytorchModel:
@@ -27,24 +52,31 @@ class PytorchModel:
     def load(self) -> None:
         torch.manual_seed(CONST.seed)
 
-    def fit(self, dataset: pd.Series, labels: Optional[pd.Series]) -> None:
+    def fit(self, dataset: Dataset) -> None:
         val_size = int(len(dataset) * self.config.val_size)
         train_size = len(dataset) - val_size
         train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
 
-        train_dataloader = DataLoader(train_dataset, batch_size=32)
-        val_dataloader = DataLoader(val_dataset, batch_size=32)
+        train_dataloader = DataLoader(
+            train_dataset, batch_size=32, collate_fn=collate_fn_padd
+        )
+        val_dataloader = DataLoader(
+            val_dataset, batch_size=32, collate_fn=collate_fn_padd
+        )
 
-        trainer = pl.Trainer(gpus=4, num_nodes=8, precision=16, limit_train_batches=0.5)
+        trainer = pl.Trainer(
+            accelerator=device,
+            # gpus=4,
+            # num_nodes=8,
+            # precision=16,
+            # limit_train_batches=0.5,
+        )
         trainer.fit(self.model, train_dataloader, val_dataloader)
 
-    def predict(self, dataset: pd.Series) -> pd.Series:
+    def predict(self, dataset: Dataset) -> pd.Series:
         test_dataset = DataLoader(dataset, batch_size=32)
 
         return self.model(test_dataset)
-
-    def is_fitted(self) -> bool:
-        pass
 
 
 class LightningWrapper(pl.LightningModule):
@@ -69,7 +101,7 @@ class LightningWrapper(pl.LightningModule):
         return loss
 
     def validation_step(self, val_batch, batch_idx):
-        x, y = val_batch
+        x, y, length = val_batch
         x = x.view(x.size(0), -1)
         x_hat = self.model(x)
         loss = F.mse_loss(x_hat, y)

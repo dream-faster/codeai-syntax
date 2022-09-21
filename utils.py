@@ -2,23 +2,22 @@ from tokenize import tokenize, NUMBER, STRING, NAME, OP
 from io import BytesIO
 from typing import List, Optional
 import pandas as pd
-import token
 import numpy as np
 import os
 
 
-def to_token_list(s: str) -> List:
+def to_token_list(s: str, key: str) -> List:
     tokens = []  # list of tokens extracted from source code.
 
     g = tokenize(BytesIO(s.encode("utf-8")).readline)
     for t in g:
 
-        if t.type == NUMBER and "." in t.string:  # replace NUMBER tokens
-            tokens.extend(
-                [(NAME, "Decimal"), (OP, "("), (STRING, repr(t.string)), (OP, ")")]
-            )
-        else:
-            tokens.append((t.type, t.string, token.tok_name[t.type]))
+        # if t.type == NUMBER and "." in t.string:  # replace NUMBER tokens
+        #     tokens.extend(
+        #         [(NAME, "Decimal"), (OP, "("), (STRING, repr(t.string)), (OP, ")")]
+        #     )
+        # else:
+        tokens.append(t._asdict()[key])  # (t.type, t.string, token.tok_name[t.type]))
 
     return list(tokens)
 
