@@ -42,7 +42,8 @@ def write_dataframe(
     exclude_columns: Optional[List[str]] = None,
     bucket_step: int = 1,
 ) -> None:
-
+    if os.path.exists(path) is False:
+        os.makedirs(path)
     spec_columns = df.columns
     if columns is not None:
         spec_columns = columns
