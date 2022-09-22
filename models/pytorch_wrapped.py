@@ -72,6 +72,7 @@ class PytorchModel:
 
         trainer = pl.Trainer(
             accelerator=device,
+            max_epochs=3
             # gpus=4,
             # num_nodes=8,
             # precision=16,
@@ -89,6 +90,7 @@ class LightningWrapper(pl.LightningModule):
     def __init__(self, model):
         super().__init__()
         self.model = model
+        self.criterion = nn.NLLLoss()
 
     def forward(self, x):
         embedding = self.model(x)
@@ -104,7 +106,7 @@ class LightningWrapper(pl.LightningModule):
         loss = 0.0
         for i in range(x.size(0)):
             x_hat, hidden = self.model(x[i], hidden)
-            loss += F.mse_loss(x_hat.type(torch.float).T, y)
+            loss += self.criterion(x_hat.type(torch.float), y.T)
         self.log("train_loss", loss)
         return loss
 
@@ -114,5 +116,5 @@ class LightningWrapper(pl.LightningModule):
         loss = 0.0
         for i in range(x.size(0)):
             x_hat, hidden = self.model(x[i], hidden)
-            loss += F.mse_loss(x_hat.type(torch.float).T, y)
+            loss += self.criterion(x_hat.type(torch.float), y.T)
         self.log("val_loss", loss)
