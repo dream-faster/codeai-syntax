@@ -9,34 +9,37 @@ from torch.utils.data import DataLoader, random_split, Dataset
 from constants import CONST
 from .linear import Linear
 from type import Evaluators, PytorchConfig
-from typing import List, Tuple
+from typing import List, Tuple, Callable
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def collate_fn_padd(
-    batch: List[Tuple[List[int], float]]
-) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-    """
-    Padds batch of variable length
+def hoc_collate(pad_length: int) -> Callable:
+    def collate_fn_padd(
+        batch: List[Tuple[List[int], float]]
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """
+        Padds batch of variable length
 
-    note: it converts things ToTensor manually here since the ToTensor transform
-    assume it takes in images rather than arbitrary tensors.
-    """
-    features, labels = zip(*batch)
-    ## get sequence lengths
-    lengths = torch.tensor([len(t) for t in features]).to(device)
+        note: it converts things ToTensor manually here since the ToTensor transform
+        assume it takes in images rather than arbitrary tensors.
+        """
+        features, labels = zip(*batch)
+        ## get sequence lengths
+        lengths = torch.tensor([len(t) for t in features]).to(device)
 
-    ## padd
-    features = [torch.tensor(t).type(torch.long).to(device) for t in features]
-    features = torch.nn.utils.rnn.pad_sequence(features).T
-    labels = torch.Tensor(labels).type(torch.long).to(device).T
+        ## padd
+        features = [torch.tensor(t).type(torch.long).to(device) for t in features]
+        features = torch.nn.utils.rnn.pad_sequence(features, batch_first=True).T
+        labels = torch.Tensor(labels).type(torch.long).to(device).T
 
-    features.names = ("batch", "source_tokens")
-    lengths.names = ("batch",)
-    labels.names = ("batch",)
-    # mask = (features != 0).to(device)
-    return features, labels, lengths
+        # features.names = ("batch", "source_tokens")
+        # lengths.names = ("batch",)
+        # labels.names = ("batch",)
+        # mask = (features != 0).to(device)
+        return features, labels, lengths
+
+    return collate_fn_padd
 
 
 class PytorchModel:
@@ -61,10 +64,10 @@ class PytorchModel:
         train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
 
         train_dataloader = DataLoader(
-            train_dataset, batch_size=32, collate_fn=collate_fn_padd
+            train_dataset, batch_size=32, collate_fn=hoc_collate(self.config.input_size)
         )
         val_dataloader = DataLoader(
-            val_dataset, batch_size=32, collate_fn=collate_fn_padd
+            val_dataset, batch_size=32, collate_fn=hoc_collate(self.config.input_size)
         )
 
         trainer = pl.Trainer(
@@ -98,12 +101,12 @@ class LightningWrapper(pl.LightningModule):
     def training_step(self, train_batch, batch_idx):
         x, y, length = train_batch
         x_hat = self.model(x)
-        loss = F.mse_loss(x_hat, y)
+        loss = F.mse_loss(x_hat.type(torch.float).T, y)
         self.log("train_loss", loss)
         return loss
 
     def validation_step(self, val_batch, batch_idx):
         x, y, length = val_batch
         x_hat = self.model(x)
-        loss = F.mse_loss(x_hat, y)
+        loss = F.mse_loss(x_hat.type(torch.float).T, y.type(torch.float))
         self.log("val_loss", loss)

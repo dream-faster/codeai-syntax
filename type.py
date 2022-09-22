@@ -14,6 +14,7 @@ Evaluators = List[Evaluator]
 
 @dataclass
 class PytorchConfig:
+    input_size:int
     hidden_size: int
     output_size: int
     val_size: float

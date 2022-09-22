@@ -15,16 +15,14 @@ class Linear(nn.Module):
         self.hidden_size = config.hidden_size
 
         self.embedding = nn.Embedding(config.dictionary_size, config.hidden_size)
-        self.out = nn.Linear(config.hidden_size, config.output_size)
-        self.logsoftmax = nn.LogSoftmax(dim=2)
+        self.out = nn.Linear(config.hidden_size * config.input_size, config.output_size)
+        self.logsoftmax = nn.LogSoftmax(dim=1)
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
-        input = input.rename(None)
         output = self.embedding(input)
+        output = output.view(output.shape[0], 1, -1)[:, 0, :]
         output = F.relu(output)
-        output.names = ("batch", "source_tokens", "embeddings")
-        output = self.logsoftmax(self.out(output))
-        return torch.argmax(output, dim=2)
+        return self.logsoftmax(self.out(output))
 
     def initHidden(self) -> torch.Tensor:
         return torch.zeros(1, 1, self.hidden_size, device=device)
