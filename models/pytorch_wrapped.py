@@ -74,7 +74,7 @@ class PytorchModel:
         trainer = pl.Trainer(
             accelerator=accelerator,
             max_epochs=50,
-            gpus=4,
+            gpus=1,
             num_nodes=8,
             precision=16,
             limit_train_batches=0.5,
