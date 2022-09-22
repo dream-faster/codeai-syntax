@@ -1,6 +1,7 @@
 from enum import Enum
 from models.pytorch_wrapped import PytorchModel
 from models.linear import Linear
+from models.rnn import RNN
 from type import PytorchConfig
 from utils import read_all_files
 from constants import CONST
@@ -35,7 +36,7 @@ config = PytorchConfig(
     val_size=0.2,
     input_size=max(longest_tokens),
 )
-new_model = PytorchModel("line-predictor", config, Linear)
+new_model = PytorchModel("line-predictor", config, RNN)
 
 dataset_train = CodeSyntaxDataset(
     df,

@@ -100,13 +100,19 @@ class LightningWrapper(pl.LightningModule):
 
     def training_step(self, train_batch, batch_idx):
         x, y, length = train_batch
-        x_hat = self.model(x)
-        loss = F.mse_loss(x_hat.type(torch.float).T, y)
+        hidden = self.model.initHidden(x.size(1))
+        loss = 0.0
+        for i in range(x.size(0)):
+            x_hat, hidden = self.model(x[i], hidden)
+            loss += F.mse_loss(x_hat.type(torch.float).T, y)
         self.log("train_loss", loss)
         return loss
 
     def validation_step(self, val_batch, batch_idx):
         x, y, length = val_batch
-        x_hat = self.model(x)
-        loss = F.mse_loss(x_hat.type(torch.float).T, y.type(torch.float))
+        hidden = self.model.initHidden(x.size(1))
+        loss = 0.0
+        for i in range(x.size(0)):
+            x_hat, hidden = self.model(x[i], hidden)
+            loss += F.mse_loss(x_hat.type(torch.float).T, y)
         self.log("val_loss", loss)
