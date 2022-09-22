@@ -12,6 +12,7 @@ from type import Evaluators, PytorchConfig
 from typing import List, Tuple, Callable
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+accelerator = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def hoc_collate(pad_length: int) -> Callable:
@@ -71,12 +72,12 @@ class PytorchModel:
         )
 
         trainer = pl.Trainer(
-            accelerator=device,
-            max_epochs=50
-            # gpus=4,
-            # num_nodes=8,
-            # precision=16,
-            # limit_train_batches=0.5,
+            accelerator=accelerator,
+            max_epochs=50,
+            gpus=4,
+            num_nodes=8,
+            precision=16,
+            limit_train_batches=0.5,
         )
         trainer.fit(self.model, train_dataloader, val_dataloader)
 
