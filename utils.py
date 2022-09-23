@@ -25,7 +25,11 @@ def to_token_list(s: str, key: str) -> List:
 def read_all_files(
     path: str, name: str, extension: str = "json", limit_files: Optional[int] = None
 ) -> pd.DataFrame:
-    lst = [file for file in os.listdir(path) if file.split(".")[-1] == extension]
+    lst = [
+        file
+        for file in os.listdir(path)
+        if file.split(".")[-1] == extension and name in file
+    ]
     number_files = len(lst) if limit_files is None else min(limit_files, len(lst))
 
     df = pd.DataFrame([])

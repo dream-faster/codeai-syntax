@@ -13,20 +13,22 @@ from data.python_syntax.dataset import CodeSyntaxDataset
 import token
 
 # Load in data
-def train() -> None:
-    df = read_all_files(
-        f"{CONST.data_root_path}/processed", name="training_", limit_files=2
+def train() -> PytorchModel:
+    df_train = read_all_files(
+        f"{CONST.data_root_path}/processed", name="training_", limit_files=None
     )
 
     num_rows = (
-        df[DataParams.correct_code.value].apply(lambda x: len(x.split("\n"))).to_list()
+        df_train[DataParams.correct_code.value]
+        .apply(lambda x: len(x.split("\n")))
+        .to_list()
     )
     num_rows_labels = (
-        df[DataParams.metadata.value]
+        df_train[DataParams.metadata.value]
         .apply(lambda x: int(x[DataParams.fix_location.value]))
         .to_list()
     )
-    longest_tokens = df[DataParams.token.value].apply(lambda x: len(x)).to_list()
+    longest_tokens = df_train[DataParams.token.value].apply(lambda x: len(x)).to_list()
 
     largest_row = max(num_rows + num_rows_labels) + 1
 
@@ -36,11 +38,12 @@ def train() -> None:
         dictionary_size=len(token.__all__),
         val_size=0.2,
         input_size=max(longest_tokens),
+        epochs=3,
     )
     new_model = PytorchModel("line-predictor", config, RNN)
 
     dataset_train = CodeSyntaxDataset(
-        df,
+        df_train,
         input_col=DataParams.token,
         label_col=DataParams.fix_location,
         num_rows=largest_row,
@@ -48,6 +51,20 @@ def train() -> None:
 
     new_model.fit(dataset_train)
 
+    return new_model
+
 
 if __name__ == "__main__":
-    train()
+    model = train()
+
+    df_test = read_all_files(
+        f"{CONST.data_root_path}/processed", name="test_", limit_files=1
+    )
+
+    dataset_test = CodeSyntaxDataset(
+        df_test,
+        input_col=DataParams.token,
+        label_col=DataParams.fix_location,
+    )
+
+    model.predict(dataset_test)
