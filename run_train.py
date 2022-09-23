@@ -15,7 +15,7 @@ import token
 # Load in data
 def train() -> PytorchModel:
     df_train = read_all_files(
-        f"{CONST.data_root_path}/processed", name="training_", limit_files=None
+        f"{CONST.data_root_path}/processed", name="training_", limit_files=2
     )
 
     num_rows = (
@@ -38,7 +38,7 @@ def train() -> PytorchModel:
         dictionary_size=len(token.__all__),
         val_size=0.2,
         input_size=max(longest_tokens),
-        epochs=3,
+        epochs=1,
     )
     new_model = PytorchModel("line-predictor", config, RNN)
 

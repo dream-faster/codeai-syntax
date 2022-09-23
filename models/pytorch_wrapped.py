@@ -1,13 +1,10 @@
-from typing import Optional
-from dataclasses import dataclass
-import pandas as pd
+from typing import Optional, Any
 import pytorch_lightning as pl
 import torch
 from torch import nn
-from torch.nn import functional as F
 from torch.utils.data import DataLoader, random_split, Dataset
 from constants import CONST
-from .linear import Linear
+
 from type import Evaluators, PytorchConfig
 from typing import List, Tuple, Callable
 
@@ -55,6 +52,15 @@ class PytorchModel:
         self.id = id
         self.model = LightningWrapper(model(self.config).to(device))
         self.evaluators: Optional[Evaluators] = evaluators
+        
+        self.trainer = pl.Trainer(
+            accelerator=accelerator,
+            max_epochs=self.config.epochs,
+            # gpus=1,
+            # num_nodes=8,
+            # precision=16,
+            # limit_train_batches=0.5,
+        )
 
     def load(self) -> None:
         torch.manual_seed(CONST.seed)
@@ -71,20 +77,13 @@ class PytorchModel:
             val_dataset, batch_size=32, collate_fn=hoc_collate(self.config.input_size)
         )
 
-        trainer = pl.Trainer(
-            accelerator=accelerator,
-            max_epochs=self.config.epochs,
-            # gpus=1,
-            # num_nodes=8,
-            # precision=16,
-            # limit_train_batches=0.5,
-        )
-        trainer.fit(self.model, train_dataloader, val_dataloader)
 
-    def predict(self, dataset: Dataset) -> pd.Series:
+        self.trainer.fit(self.model, train_dataloader, val_dataloader)
+
+    def predict(self, dataset: Dataset) -> Any:
         test_dataset = DataLoader(dataset, batch_size=32)
 
-        return self.model(test_dataset)
+        return self.trainer.predict(self.model, test_dataset)
 
 
 class LightningWrapper(pl.LightningModule):
@@ -119,3 +118,13 @@ class LightningWrapper(pl.LightningModule):
             x_hat, hidden = self.model(x[i], hidden)
             loss += self.criterion(x_hat.type(torch.float), y.T)
         self.log("val_loss", loss)
+
+    def test_step(self, test_batch):
+        x, y, length = test_batch
+        hidden = self.model.initHidden(x.size(1))
+        loss = 0.0
+        for i in range(x.size(0)):
+            x_hat, hidden = self.model(x[i], hidden)
+            
+        self.log("val_loss", loss)
+        
