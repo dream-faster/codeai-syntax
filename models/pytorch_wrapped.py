@@ -81,7 +81,7 @@ class PytorchModel:
         self.trainer.fit(self.model, train_dataloader, val_dataloader)
 
     def predict(self, dataset: Dataset) -> Any:
-        test_dataset = DataLoader(dataset, batch_size=32)
+        test_dataset = DataLoader(dataset, batch_size=32, collate_fn=hoc_collate(self.config.input_size))
 
         return self.trainer.predict(self.model, test_dataset)
 
