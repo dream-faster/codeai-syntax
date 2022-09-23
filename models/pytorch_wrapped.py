@@ -53,7 +53,7 @@ class PytorchModel:
     ):
         self.config = config
         self.id = id
-        self.model = LightningWrapper(model(self.config))
+        self.model = LightningWrapper(model(self.config).to(device))
         self.evaluators: Optional[Evaluators] = evaluators
 
     def load(self) -> None:

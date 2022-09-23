@@ -3,6 +3,8 @@ import torch.nn as nn
 
 from type import PytorchConfig
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 class RNN(nn.Module):
     def __init__(self, config: PytorchConfig):
@@ -30,4 +32,4 @@ class RNN(nn.Module):
         return output, hidden
 
     def initHidden(self, batch_size: int) -> torch.Tensor:
-        return torch.zeros(batch_size, self.hidden_size)
+        return torch.zeros(batch_size, self.hidden_size).to(device)
