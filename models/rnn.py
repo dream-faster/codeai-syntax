@@ -11,13 +11,15 @@ class RNN(nn.Module):
         super(RNN, self).__init__()
         self.hidden_size = config.hidden_size
         self.config = config
-        self.embedding = nn.Embedding(config.dictionary_size, config.hidden_size)
-        self.i2h = nn.Linear(2 * config.hidden_size, config.hidden_size)
-        self.i2o = nn.Linear(2 * config.hidden_size, config.hidden_size)
-        self.o2o = nn.Linear(2 * config.hidden_size, config.embedding_size)
+        self.embedding = nn.Embedding(config.dictionary_size, config.hidden_size).to(
+            device
+        )
+        self.i2h = nn.Linear(2 * config.hidden_size, config.hidden_size).to(device)
+        self.i2o = nn.Linear(2 * config.hidden_size, config.hidden_size).to(device)
+        self.o2o = nn.Linear(2 * config.hidden_size, config.embedding_size).to(device)
 
     def forward(self, input, hidden):
-        input = self.embedding(input)
+        input = self.embedding(input).to(device)
         input_combined = torch.cat((input, hidden), 1)
         hidden = self.i2h(input_combined)
         output = self.i2o(input_combined)
@@ -38,9 +40,9 @@ class Classifier(nn.Module):
 
         self.predictor = nn.Linear(
             config.embedding_size * config.input_size, config.output_size
-        )
-        self.logsoftmax = nn.LogSoftmax(dim=1)
-        self.dropout = nn.Dropout(0.1)
+        ).to(device)
+        self.logsoftmax = nn.LogSoftmax(dim=1).to(device)
+        self.dropout = nn.Dropout(0.1).to(device)
 
     def forward(
         self, x: torch.Tensor
