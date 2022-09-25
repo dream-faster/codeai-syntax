@@ -105,7 +105,7 @@ class LightningWrapper(pl.LightningModule):
         preds,logprobs, probs = self.model(x)
         
         for name, metric in multiclass_classification_metrics:
-            result = metric(y, zip(preds.tolist(), probs.tolist()))
+            result = metric(y.cpu(), zip(preds.cpu().tolist(), probs.cpu().tolist()))
             print(f"{name} - {result}")
             
         return preds
