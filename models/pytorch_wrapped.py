@@ -7,7 +7,7 @@ from constants import CONST
 
 from type import Evaluators, PytorchConfig
 from typing import List, Tuple, Callable
-from mopi.library.evaluation.classification import classification_metrics
+from mopi.library.evaluation.classification import multiclass_classification_metrics
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 accelerator = "cuda" if torch.cuda.is_available() else "cpu"
@@ -102,11 +102,11 @@ class LightningWrapper(pl.LightningModule):
     def forward(self, test_batch):
         x, y, length = test_batch
 
-        preds, probs =self.model(x)
+        preds,logprobs, probs = self.model(x)
         
-        for name, metric in classification_metrics:
-            result = metric(y, preds)
-            print(result)
+        for name, metric in multiclass_classification_metrics:
+            result = metric(y, zip(preds.tolist(), probs.tolist()))
+            print(f"{name} - {result}")
             
         return preds
 
@@ -116,19 +116,19 @@ class LightningWrapper(pl.LightningModule):
 
     def training_step(self, train_batch, batch_idx):
         x, y, length = train_batch
-        preds, probs=self.model(x)
-        loss = self.criterion(preds.type(torch.float), y.T)
+        preds,logprobs, probs=self.model(x)
+        loss = self.criterion(logprobs.type(torch.float), y)
         self.log("train_loss", loss)
         return loss
 
     def validation_step(self, val_batch, batch_idx):
         x, y, length = val_batch
-        preds, probs=self.model(x)
-        loss = self.criterion(preds.type(torch.float), y.T)
+        preds,logprobs, probs=self.model(x)
+        loss = self.criterion(logprobs.type(torch.float), y)
         self.log("val_loss", loss)
 
-    def test_step(self, test_batch):
-        x, y, length = test_batch
-        preds, probs, hidden = self.model(x)
+    # def test_step(self, test_batch):
+    #     x, y, length = test_batch
+    #     preds, probs, hidden = self.model(x)
     
         

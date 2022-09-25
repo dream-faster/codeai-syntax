@@ -15,21 +15,19 @@ import token
 # Load in data
 def train() -> PytorchModel:
     df_train = read_all_files(
-        f"{CONST.data_root_path}/processed", name="training_", limit_files=2
+        f"{CONST.data_root_path}/processed", name="training_", limit_files=None
     )
 
-    num_rows = (
-        df_train[DataParams.correct_code.value]
-        .apply(lambda x: len(x.split("\n")))
-        .to_list()
-    )
+    num_rows = df_train[DataParams.correct_code.value].apply(lambda x: len(x)).to_list()
     num_rows_labels = (
         df_train[DataParams.metadata.value]
         .apply(lambda x: int(x[DataParams.fix_location.value]))
         .to_list()
     )
 
-    longest_tokens = df_train[DataParams.token.value].apply(lambda x: len(x)).to_list()
+    longest_programs_tokens = (
+        df_train[DataParams.token.value].apply(lambda x: len(x)).to_list()
+    )
 
     largest_row = max(num_rows + num_rows_labels) + 1
     num_categories = largest_row
@@ -46,12 +44,12 @@ def train() -> PytorchModel:
     """
 
     config = PytorchConfig(
-        input_size=max(longest_tokens),
+        input_size=max(longest_programs_tokens),
         hidden_size=64,
         output_size=num_categories,
         dictionary_size=len(token.__all__),
         val_size=0.2,
-        epochs=1,
+        epochs=10,
         embedding_size=120,
     )
     new_model = PytorchModel("line-predictor", config, Classifier)

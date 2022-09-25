@@ -42,7 +42,9 @@ class Classifier(nn.Module):
         self.logsoftmax = nn.LogSoftmax(dim=1)
         self.dropout = nn.Dropout(0.1)
 
-    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(
+        self, x: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         hidden = self.encoder.initHidden(x.size(1))
 
         encoded = torch.tensor([])
@@ -55,6 +57,7 @@ class Classifier(nn.Module):
         output = self.logsoftmax(output)
 
         preds = torch.argmax(output, dim=1)
+        logprobs = output
         probs = torch.exp(output)
 
-        return preds, probs
+        return preds, logprobs, probs
