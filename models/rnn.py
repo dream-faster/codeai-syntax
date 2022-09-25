@@ -34,7 +34,7 @@ class Classifier(nn.Module):
     def __init__(self, config: PytorchConfig) -> None:
         super(Classifier, self).__init__()
         self.config = config
-        self.encoder = RNN(config)
+        self.encoder = RNN(config).to(device)
 
         self.predictor = nn.Linear(
             config.embedding_size * config.input_size, config.output_size

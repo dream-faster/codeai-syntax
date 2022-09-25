@@ -34,7 +34,7 @@ def hoc_collate(pad_length: int) -> Callable:
         features[0] = nn.ConstantPad1d((0, pad_length - features[0].shape[0]), 0)(features[0])
         
         ## 2. Adjust padding for all other elements
-        features = torch.nn.utils.rnn.pad_sequence(features, batch_first=True).T
+        features = torch.nn.utils.rnn.pad_sequence(features, batch_first=True).T.to(device)
         labels = torch.Tensor(labels).type(torch.long).to(device).T
 
         return features, labels, lengths
