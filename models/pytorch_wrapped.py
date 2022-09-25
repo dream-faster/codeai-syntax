@@ -7,7 +7,7 @@ from constants import CONST
 
 from type import Evaluators, PytorchConfig
 from typing import List, Tuple, Callable
-from mopi.library.evaluation.classification import multiclass_classification_metrics
+from .evaluation import multiclass_classification_metrics
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 accelerator = "cuda" if torch.cuda.is_available() else "cpu"
