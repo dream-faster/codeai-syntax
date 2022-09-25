@@ -7,6 +7,7 @@ from constants import CONST
 
 from type import Evaluators, PytorchConfig
 from typing import List, Tuple, Callable
+from mopi.library.evaluation.classification import classification_metrics
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 accelerator = "cuda" if torch.cuda.is_available() else "cpu"
@@ -23,22 +24,26 @@ def hoc_collate(pad_length: int) -> Callable:
         assume it takes in images rather than arbitrary tensors.
         """
         features, labels = zip(*batch)
-        ## get sequence lengths
+        ## Get sequence lengths
         lengths = torch.tensor([len(t) for t in features]).to(device)
-
-        ## padd
+        
+        ## 0. Convert input features to tensors.
         features = [torch.tensor(t).type(torch.long).to(device) for t in features]
+        
+        ## 1. padd first element to given (constant length)
+        features[0] = nn.ConstantPad1d((0, pad_length - features[0].shape[0]), 0)(features[0])
+        
+        ## 2. Adjust padding for all other elements
         features = torch.nn.utils.rnn.pad_sequence(features, batch_first=True).T
         labels = torch.Tensor(labels).type(torch.long).to(device).T
 
-        # features.names = ("batch", "source_tokens")
-        # lengths.names = ("batch",)
-        # labels.names = ("batch",)
-        # mask = (features != 0).to(device)
         return features, labels, lengths
 
     return collate_fn_padd
 
+
+
+        
 
 class PytorchModel:
     def __init__(
@@ -86,15 +91,24 @@ class PytorchModel:
         return self.trainer.predict(self.model, test_dataset)
 
 
+
+
 class LightningWrapper(pl.LightningModule):
     def __init__(self, model):
         super().__init__()
         self.model = model
         self.criterion = nn.NLLLoss()
+    
+    def forward(self, test_batch):
+        x, y, length = test_batch
 
-    def forward(self, x):
-        embedding = self.model(x)
-        return embedding
+        preds, probs =self.model(x)
+        
+        for name, metric in classification_metrics:
+            result = metric(y, preds)
+            print(result)
+            
+        return preds
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
@@ -102,29 +116,19 @@ class LightningWrapper(pl.LightningModule):
 
     def training_step(self, train_batch, batch_idx):
         x, y, length = train_batch
-        hidden = self.model.initHidden(x.size(1))
-        loss = 0.0
-        for i in range(x.size(0)):
-            x_hat, hidden = self.model(x[i], hidden)
-            loss += self.criterion(x_hat.type(torch.float), y.T)
+        preds, probs=self.model(x)
+        loss = self.criterion(preds.type(torch.float), y.T)
         self.log("train_loss", loss)
         return loss
 
     def validation_step(self, val_batch, batch_idx):
         x, y, length = val_batch
-        hidden = self.model.initHidden(x.size(1))
-        loss = 0.0
-        for i in range(x.size(0)):
-            x_hat, hidden = self.model(x[i], hidden)
-            loss += self.criterion(x_hat.type(torch.float), y.T)
+        preds, probs=self.model(x)
+        loss = self.criterion(preds.type(torch.float), y.T)
         self.log("val_loss", loss)
 
     def test_step(self, test_batch):
         x, y, length = test_batch
-        hidden = self.model.initHidden(x.size(1))
-        loss = 0.0
-        for i in range(x.size(0)):
-            x_hat, hidden = self.model(x[i], hidden)
-            
-        self.log("val_loss", loss)
+        preds, probs, hidden = self.model(x)
+    
         

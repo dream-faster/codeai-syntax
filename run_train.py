@@ -1,7 +1,7 @@
 from enum import Enum
 from models.pytorch_wrapped import PytorchModel
 from models.linear import Linear
-from models.rnn import RNN
+from models.rnn import Classifier
 from type import PytorchConfig
 from utils import read_all_files
 from constants import CONST
@@ -28,19 +28,33 @@ def train() -> PytorchModel:
         .apply(lambda x: int(x[DataParams.fix_location.value]))
         .to_list()
     )
+
     longest_tokens = df_train[DataParams.token.value].apply(lambda x: len(x)).to_list()
 
     largest_row = max(num_rows + num_rows_labels) + 1
+    num_categories = largest_row
+
+    """
+        Encoder: 
+            num_tokens = max row length * max column length
+            num_categories = max_largest_row
+            in: [batch_size, num_tokens]
+            out: [batch_size, num_tokens, embedding_length]
+        Predictor:
+            in: [batch_size, num_tokens * embedding_length] 
+            out: [batch_size, num_categories]
+    """
 
     config = PytorchConfig(
+        input_size=max(longest_tokens),
         hidden_size=64,
-        output_size=largest_row,
+        output_size=num_categories,
         dictionary_size=len(token.__all__),
         val_size=0.2,
-        input_size=max(longest_tokens),
         epochs=1,
+        embedding_size=120,
     )
-    new_model = PytorchModel("line-predictor", config, RNN)
+    new_model = PytorchModel("line-predictor", config, Classifier)
 
     dataset_train = CodeSyntaxDataset(
         df_train,
