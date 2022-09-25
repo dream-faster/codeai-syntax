@@ -47,10 +47,10 @@ class Classifier(nn.Module):
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         hidden = self.encoder.initHidden(x.size(1))
 
-        encoded = torch.tensor([])
+        encoded = torch.tensor([]).to(device)
         for i in range(x.size(0)):
             x_hat, hidden = self.encoder(x[i], hidden)
-            encoded = torch.cat([encoded, x_hat], dim=1)
+            encoded = torch.cat([encoded, x_hat], dim=1).to(device)
 
         encoded = self.dropout(encoded)
         output = self.predictor(encoded)
