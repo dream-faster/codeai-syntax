@@ -11,5 +11,6 @@ dependencies:
   - numpy
   - pandas
   - pytest
+  - sklearn
 
 prefix: /usr/local/anaconda3/envs/nlp
