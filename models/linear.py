@@ -2,13 +2,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from type import PytorchConfig
+from type import PytorchModelConfig
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class Linear(nn.Module):
-    def __init__(self, config: PytorchConfig) -> None:
+    def __init__(self, config: PytorchModelConfig) -> None:
         super(Linear, self).__init__()
 
         self.id = id

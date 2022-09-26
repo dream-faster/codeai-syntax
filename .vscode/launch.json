@@ -8,7 +8,7 @@
             "name": "run",
             "type": "python",
             "request": "launch",
-            "module": "explore",
+            "module": "run_train",
             "args": []
         }
     ]
