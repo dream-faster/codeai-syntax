@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader, Dataset
 
 from data.python_syntax.metadata import DataParams
 from data.python_syntax.dataset import CodeSyntaxDataset, CodeSyntaxPredict
-from type import EmbedType, StagingConfig
+from type import EmbedType, StagingConfig, dev_config, prod_config
 import token
 import pandas as pd
 
@@ -102,21 +102,26 @@ def load_dataframe(staging: StagingConfig) -> pd.DataFrame:
 
 
 def get_staging_config() -> StagingConfig:
-    dev_config = StagingConfig(limit_dataset=2, epochs=1)
-    prod_config = StagingConfig(limit_dataset=None, epochs=20)
-
     RunningInCOLAB = (
         "google.colab" in str(get_ipython())
         if hasattr(__builtins__, "__IPYTHON__")
         else False
     )
 
+    if RunningInCOLAB is False:
+        # Try another method
+        try:
+            import google.colab
+
+            RunningInCOLAB = True
+        except:
+            RunningInCOLAB = False
+
     staging_config = prod_config if RunningInCOLAB else dev_config
     return staging_config
 
 
-def train_test():
-    staging_config = get_staging_config()
+def train_test(staging_config: StagingConfig):
     print("Running training with:")
     print(staging_config)
     df_train = load_dataframe(staging_config)
@@ -126,4 +131,5 @@ def train_test():
 
 
 if __name__ == "__main__":
-    train_test()
+    staging_config = get_staging_config()
+    train_test(staging_config)

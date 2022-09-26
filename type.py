@@ -41,3 +41,7 @@ class PytorchWrapperConfig:
 class StagingConfig:
     epochs: int
     limit_dataset: Optional[int] = None
+
+
+dev_config = StagingConfig(limit_dataset=2, epochs=1)
+prod_config = StagingConfig(limit_dataset=None, epochs=20)
