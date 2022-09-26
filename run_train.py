@@ -117,6 +117,8 @@ def get_staging_config() -> StagingConfig:
 
 def train_test():
     staging_config = get_staging_config()
+    print("Running training with:")
+    print(staging_config)
     df_train = load_dataframe(staging_config)
     model = create_model(staging_config, df_train)
     trained_model = train(staging_config, model, df_train)
