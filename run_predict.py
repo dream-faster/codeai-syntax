@@ -45,7 +45,6 @@ def create_inference_dataset(strings: List[str]) -> pd.Series:
 
 
 if __name__ == "__main__":
-
     model = create_model()
 
     strings_to_infer = [

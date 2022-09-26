@@ -20,9 +20,6 @@ def hoc_collate(pad_length: Optional[int] = None, predict:bool=False) -> Callabl
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor, torch.Tensor]]:
         """
         Padds batch of variable length
-
-        note: it converts things ToTensor manually here since the ToTensor transform
-        assume it takes in images rather than arbitrary tensors.
         """
         if predict:
             features = batch
@@ -170,7 +167,6 @@ class LightningWrapper(pl.LightningModule):
             self.test_results=[(y, preds, probs, hidden)]
         else:
             self.test_results.append((y, preds, probs, hidden))
-        # return preds, probs, hidden
         
         
     

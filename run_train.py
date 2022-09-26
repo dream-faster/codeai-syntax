@@ -9,13 +9,15 @@ from torch.utils.data import DataLoader, Dataset
 
 from data.python_syntax.metadata import DataParams
 from data.python_syntax.dataset import CodeSyntaxDataset, CodeSyntaxPredict
-from type import EmbedType
+from type import EmbedType, StagingConfig
 import token
 import pandas as pd
 
 
 # Load in data
-def train(model: PytorchWrapper, df_train: pd.DataFrame) -> PytorchWrapper:
+def train(
+    staging: StagingConfig, model: PytorchWrapper, df_train: pd.DataFrame
+) -> PytorchWrapper:
 
     dataset_train = CodeSyntaxDataset(
         df_train,
@@ -29,9 +31,11 @@ def train(model: PytorchWrapper, df_train: pd.DataFrame) -> PytorchWrapper:
     return model
 
 
-def test(model: PytorchWrapper):
+def test(staging_config: StagingConfig, model: PytorchWrapper):
     df_test = read_all_files(
-        f"{CONST.data_root_path}/processed", name="test_", limit_files=1
+        f"{CONST.data_root_path}/processed",
+        name="test_",
+        limit_files=staging_config.limit_dataset,
     )
 
     dataset_test = CodeSyntaxDataset(
@@ -42,7 +46,7 @@ def test(model: PytorchWrapper):
     model.test(dataset_test)
 
 
-def create_model(df_train: pd.DataFrame) -> PytorchWrapper:
+def create_model(staging: StagingConfig, df_train: pd.DataFrame) -> PytorchWrapper:
 
     num_rows = df_train[DataParams.correct_code.value].apply(lambda x: len(x)).to_list()
     num_rows_labels = (
@@ -71,7 +75,8 @@ def create_model(df_train: pd.DataFrame) -> PytorchWrapper:
 
     config = PytorchWrapperConfig(
         val_size=0.2,
-        epochs=1,
+        epochs=staging.epochs,
+        batch_size=32,
         model_config=PytorchModelConfig(
             input_size=max(longest_programs_tokens),
             hidden_size=64,
@@ -86,18 +91,35 @@ def create_model(df_train: pd.DataFrame) -> PytorchWrapper:
     return new_model
 
 
-def load_dataframe() -> pd.DataFrame:
+def load_dataframe(staging: StagingConfig) -> pd.DataFrame:
     df = read_all_files(
-        f"{CONST.data_root_path}/processed", name="training_", limit_files=2
+        f"{CONST.data_root_path}/processed",
+        name="training_",
+        limit_files=staging.limit_dataset,
     )
 
     return df
 
 
+def get_staging_config() -> StagingConfig:
+    dev_config = StagingConfig(limit_dataset=2, epochs=1)
+    prod_config = StagingConfig(limit_dataset=None, epochs=20)
+
+    RunningInCOLAB = (
+        "google.colab" in str(get_ipython())
+        if hasattr(__builtins__, "__IPYTHON__")
+        else False
+    )
+
+    staging_config = prod_config if RunningInCOLAB else dev_config
+    return staging_config
+
+
 def train_test():
-    df_train = load_dataframe()
-    model = create_model(df_train)
-    trained_model = train(model, df_train)
+    staging_config = get_staging_config()
+    df_train = load_dataframe(staging_config)
+    model = create_model(staging_config, df_train)
+    trained_model = train(staging_config, model, df_train)
     test(trained_model)
 
 

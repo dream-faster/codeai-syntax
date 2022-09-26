@@ -33,5 +33,11 @@ class PytorchModelConfig:
 class PytorchWrapperConfig:
     val_size: float
     epochs: int
-    model_config: Optional[PytorchModelConfig] = None
     batch_size: int
+    model_config: Optional[PytorchModelConfig] = None
+
+
+@dataclass
+class StagingConfig:
+    epochs: int
+    limit_dataset: Optional[int] = None
