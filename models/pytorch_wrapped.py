@@ -69,6 +69,7 @@ class PytorchWrapper:
         self.evaluators: Optional[Evaluators] = evaluators
         self.model_to_wrap = model_to_wrap
         self.model = None
+        self.pad_length = None
         self.trainer = pl.Trainer(
             accelerator=accelerator,
             max_epochs=self.config.epochs,
@@ -83,11 +84,13 @@ class PytorchWrapper:
     def load(self, path:Optional[str]=None) -> None:
         torch.manual_seed(CONST.seed) 
         if path:
-            self.model = pl.LightningModule.load_from_checkpoint(path)
-        else:
+            self.model = LightningWrapper.load_from_checkpoint(path)
+        elif self.config.model_config is not None:
             self.pad_length = self.config.model_config.input_size if self.config.model_config.embed_type == EmbedType.concat else None
             self.model = LightningWrapper(self.model_to_wrap(self.config.model_config).to(device))
-        
+        else:
+            Exception("No Model could be loaded.")
+              
     def fit(self, dataset: Dataset) -> None:
         val_size = int(len(dataset) * self.config.val_size)
         train_size = len(dataset) - val_size
@@ -95,17 +98,17 @@ class PytorchWrapper:
 
         
         train_dataloader = DataLoader(
-            train_dataset, batch_size=32, collate_fn=hoc_collate(self.pad_length)
+            train_dataset, batch_size=self.config.batch_size, collate_fn=hoc_collate(self.pad_length)
         )
         val_dataloader = DataLoader(
-            val_dataset, batch_size=32, collate_fn=hoc_collate(self.pad_length)
+            val_dataset, batch_size=self.config.batch_size, collate_fn=hoc_collate(self.pad_length)
         )
 
 
         self.trainer.fit(self.model, train_dataloader, val_dataloader)
 
     def predict(self, dataset: Dataset) -> Any:
-        data_to_predict = DataLoader(dataset, batch_size=32, collate_fn=hoc_collate(self.pad_length, predict=True))
+        data_to_predict = DataLoader(dataset, batch_size=self.config.batch_size, collate_fn=hoc_collate(self.pad_length, predict=True))
         results = self.trainer.predict(self.model, data_to_predict)
         preds, logprobs, probs = zip(*results)
         preds = torch.cat(preds)
@@ -113,7 +116,7 @@ class PytorchWrapper:
         return preds, probs
     
     def test(self, dataset:Dataset):
-        test_dataset = DataLoader(dataset, batch_size=32, collate_fn=hoc_collate(self.pad_length))
+        test_dataset = DataLoader(dataset, batch_size=self.config.batch_size, collate_fn=hoc_collate(self.pad_length))
 
         self.trainer.test(self.model, test_dataset)
         results = self.model.test_results

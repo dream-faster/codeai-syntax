@@ -14,6 +14,7 @@ import token
 import pandas as pd
 from utils import to_token_list
 from typing import Tuple, List
+from utils import to_token_list
 
 # Load in data
 def predict(
@@ -28,10 +29,7 @@ def predict(
 
 
 def create_model() -> PytorchWrapper:
-    config = PytorchWrapperConfig(
-        val_size=0.2,
-        epochs=1,
-    )
+    config = PytorchWrapperConfig(val_size=0.2, epochs=1, batch_size=32)
 
     model = PytorchWrapper("line-predictor", config, Classifier)
     model.load("lightning_logs/version_47/checkpoints/epoch=0-step=25.ckpt")
@@ -51,8 +49,13 @@ if __name__ == "__main__":
     model = create_model()
 
     strings_to_infer = [
-        "def example(x, y):\nreturn return x+y",
-        "def example(x, y =):\nreturn x+y",
+        "def example(x, y):\n    return return x+y",
+        "def example(x, y =):\n    return x+y",
     ]
     df_infer = create_inference_dataset(strings_to_infer)
     preds, probs = predict(model, df_infer)
+
+    for source_code, pred, prob in zip(strings_to_infer, preds, probs):
+        print(
+            f"The error in the source code:\n---\n{source_code}\n---\nis at location:{pred} with probability:{prob[pred]} "
+        )

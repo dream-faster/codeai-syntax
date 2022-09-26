@@ -12,7 +12,7 @@ from data.python_syntax.dataset import CodeSyntaxDataset, CodeSyntaxPredict
 from type import EmbedType
 import token
 import pandas as pd
-from utils import to_token_list
+
 
 # Load in data
 def train(model: PytorchWrapper, df_train: pd.DataFrame) -> PytorchWrapper:
