@@ -18,17 +18,11 @@ class CodeSyntaxDataset(Dataset):
         data: pd.DataFrame,
         input_col: DataParams,
         label_col: DataParams,
-        num_rows: Optional[int] = None,
-        one_hot_transform: bool = False,
     ) -> None:
         self.input = data[input_col.value].apply(
             lambda x: [float(token) for token in x]
         )
-
         self.label = data[label_col.value].astype(int)
-
-        if one_hot_transform and num_rows is not None:
-            self.label.apply(lambda x: one_hot(x, num_rows))
 
     def __len__(self):
         return len(self.input)
@@ -37,3 +31,14 @@ class CodeSyntaxDataset(Dataset):
         self, idx: int
     ) -> Tuple[List[float], List[float]]:  # pd.Series, pd.Series]:
         return self.input.iloc[idx], self.label.iloc[idx]
+
+
+class CodeSyntaxPredict(Dataset):
+    def __init__(self, data: pd.Series) -> None:
+        self.input = data.apply(lambda x: [float(token) for token in x])
+
+    def __len__(self):
+        return len(self.input)
+
+    def __getitem__(self, idx: int) -> Tuple[List[float]]:  # pd.Series, pd.Series]:
+        return self.input.iloc[idx]

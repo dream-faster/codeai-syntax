@@ -1,13 +1,13 @@
 import torch
 import torch.nn as nn
 from typing import Tuple
-from type import PytorchConfig
+from type import PytorchModelConfig
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class RNN(nn.Module):
-    def __init__(self, config: PytorchConfig):
+    def __init__(self, config: PytorchModelConfig):
         super(RNN, self).__init__()
         self.hidden_size = config.hidden_size
         self.config = config
@@ -33,14 +33,12 @@ class RNN(nn.Module):
 
 
 class Classifier(nn.Module):
-    def __init__(self, config: PytorchConfig) -> None:
+    def __init__(self, config: PytorchModelConfig) -> None:
         super(Classifier, self).__init__()
         self.config = config
         self.encoder = RNN(config).to(device)
 
-        self.predictor = nn.Linear(
-            config.embedding_size * config.input_size, config.output_size
-        ).to(device)
+        self.predictor = nn.Linear(config.embedding_size, config.output_size).to(device)
         self.logsoftmax = nn.LogSoftmax(dim=1).to(device)
         self.dropout = nn.Dropout(0.1).to(device)
 
@@ -49,10 +47,14 @@ class Classifier(nn.Module):
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         hidden = self.encoder.initHidden(x.size(1))
 
-        encoded = torch.tensor([]).to(device)
+        outputs = []
         for i in range(x.size(0)):
             x_hat, hidden = self.encoder(x[i], hidden)
-            encoded = torch.cat([encoded, x_hat], dim=1).to(device)
+            outputs.append(x_hat)
+
+        encoded = torch.stack(outputs, dim=2)
+        # Take avarage of a source file's embedded representation.
+        encoded = torch.mean(encoded, dim=2)
 
         encoded = self.dropout(encoded)
         output = self.predictor(encoded)
