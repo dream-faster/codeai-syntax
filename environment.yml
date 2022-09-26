@@ -2,8 +2,6 @@ name: nlp
 channels:
   - conda-forge
   - huggingface
-  - pytorch
-  - pytorch_lightning
 dependencies:
   - python=3.9
   - black
