@@ -2,6 +2,7 @@ name: nlp
 channels:
   - conda-forge
   - huggingface
+  - pytorch
 dependencies:
   - python=3.9
   - black
@@ -12,5 +13,9 @@ dependencies:
   - pandas
   - pytest
   - scikit-learn
+  - pytorch_lightning
+  - pytorch=1.11.0+cpu
+  - cudatoolkit=11.3
+  - torchvision=0.12.0+cpu
 
 prefix: /usr/local/anaconda3/envs/nlp
