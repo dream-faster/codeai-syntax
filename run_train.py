@@ -3,8 +3,8 @@ from models.pytorch_wrapped import PytorchWrapper
 from models.linear import Linear
 from models.rnn import Classifier
 from type import PytorchWrapperConfig, PytorchModelConfig
-from utils import read_all_files
-from constants import CONST
+from utils import read_all_files, load_file
+from constants import CONST, ExtensionTypes
 from torch.utils.data import DataLoader, Dataset
 
 from data.python_syntax.metadata import DataParams
@@ -21,7 +21,7 @@ def train(
 
     dataset_train = CodeSyntaxDataset(
         df_train,
-        input_col=DataParams.token,
+        input_col=DataParams.token_id,
         label_col=DataParams.fix_location,
     )
     model.load()
@@ -40,15 +40,17 @@ def test(staging_config: StagingConfig, model: PytorchWrapper):
 
     dataset_test = CodeSyntaxDataset(
         df_test,
-        input_col=DataParams.token,
+        input_col=DataParams.token_id,
         label_col=DataParams.fix_location,
     )
     model.test(dataset_test)
 
 
-def create_model(staging: StagingConfig, df_train: pd.DataFrame) -> PytorchWrapper:
+def create_model(
+    staging: StagingConfig, df_train: pd.DataFrame, encoding_dict: dict
+) -> PytorchWrapper:
 
-    num_rows = df_train[DataParams.correct_code.value].apply(lambda x: len(x)).to_list()
+    num_rows = df_train[DataParams.wrong_code.value].apply(lambda x: len(x)).to_list()
     num_rows_labels = (
         df_train[DataParams.metadata.value]
         .apply(lambda x: int(x[DataParams.fix_location.value]))
@@ -56,7 +58,7 @@ def create_model(staging: StagingConfig, df_train: pd.DataFrame) -> PytorchWrapp
     )
 
     longest_programs_tokens = (
-        df_train[DataParams.token.value].apply(lambda x: len(x)).to_list()
+        df_train[DataParams.token_id.value].apply(lambda x: len(x)).to_list()
     )
 
     largest_row = max(num_rows + num_rows_labels) + 1
@@ -81,7 +83,7 @@ def create_model(staging: StagingConfig, df_train: pd.DataFrame) -> PytorchWrapp
             input_size=max(longest_programs_tokens),
             hidden_size=64,
             output_size=num_categories,
-            dictionary_size=len(token.__all__),
+            dictionary_size=len(encoding_dict),
             embedding_size=120,
             embed_type=EmbedType.avarage,
         ),
@@ -125,7 +127,10 @@ def train_test(staging_config: StagingConfig):
     print("Running training with:")
     print(staging_config)
     df_train = load_dataframe(staging_config)
-    model = create_model(staging_config, df_train)
+    encoding_dict = load_file(
+        f"{CONST.data_root_path}/processed", name="vocab", extension=ExtensionTypes.json
+    )
+    model = create_model(staging_config, df_train, encoding_dict)
     trained_model = train(staging_config, model, df_train)
     test(staging_config, trained_model)
 

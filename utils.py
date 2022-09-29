@@ -98,6 +98,18 @@ def write_file(object: Any, path: str, name: str, extension: ExtensionTypes) -> 
         f.write(write_obj)
 
 
+def load_file(path: str, name: str, extension: ExtensionTypes) -> Any:
+    if os.path.exists(path) is False:
+        os.makedirs(path)
+
+    with open(f"{path}/{name}.{extension.value}", "r") as f:
+        load_obj = object
+        if extension == ExtensionTypes.json:
+            load_obj = json.load(f)
+
+    return load_obj
+
+
 def print_examples(df: pd.DataFrame, num_examples: int = 3) -> None:
     sampled = df.sample(num_examples)
     print("---")

@@ -8,7 +8,7 @@ from utils import (
 )
 from constants import CONST, TokenTypes, ExtensionTypes
 from data.python_syntax.metadata import DataParams
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 from sklearn.model_selection import train_test_split
 
 
@@ -38,12 +38,18 @@ def preprocess(
         axis=1,
     )
 
+    def encode_with_vocab(vocab: dict, source_code: List[str]) -> List[int]:
+        return [vocab[string] for string in source_code]
+
     # Turn the list of strings split from the source code to a dictionary
     vocab = set()
-    df[DataParams.token_id.value] = df[DataParams.token_string.value].apply(
-        lambda x: vocab.update(x)
-    )
+    for string in df[DataParams.token_string.value].to_list():
+        vocab.update(string)
+
     vocab = {s: i for i, s in enumerate(vocab)}
+    df[DataParams.token_id.value] = df[DataParams.token_string.value].apply(
+        lambda x: encode_with_vocab(vocab, x)
+    )
 
     # Make fix_location more accessible
     df[DataParams.fix_location.value] = df[DataParams.metadata.value].apply(
