@@ -4,3 +4,15 @@ class Constants:
 
 
 CONST = Constants()
+
+
+from enum import Enum
+
+
+class TokenTypes(Enum):
+    type = "type"
+    string = "string"
+
+
+class ExtensionTypes(Enum):
+    json = "json"

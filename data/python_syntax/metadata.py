@@ -7,4 +7,6 @@ class DataParams(Enum):
     code = "code"
     metadata = "metadata"
     fix_location = "fix_location"
-    token = "token"
+    token_id = "token_id"
+    token_string = "token_string"
+    id = "id"
