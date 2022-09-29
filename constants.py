@@ -1,5 +1,6 @@
 class Constants:
     data_root_path: str = "data/python_syntax"
+    model_output_path: str = "output/models"
     seed: int = 73
 
 
@@ -16,3 +17,8 @@ class TokenTypes(Enum):
 
 class ExtensionTypes(Enum):
     json = "json"
+
+
+class ModelTypes(Enum):
+    huggingface = "huggingace"
+    pytorch_rnn = "pytorch_rnn"
