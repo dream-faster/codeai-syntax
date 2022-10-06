@@ -1,6 +1,5 @@
 from enum import Enum
 from models.pytorch_wrapped import PytorchWrapper
-from models.linear import Linear
 from models.rnn import Classifier
 from models.hf import HFWrapper
 from type import PytorchWrapperConfig, PytorchModelConfig, HFWrapperConfig
@@ -149,7 +148,7 @@ def get_datasets(
     return dataset_train, dataset_test, dataset_train_statistics
 
 
-def train_test(staging_config: StagingConfig):
+def train_test(staging_config: StagingConfig, model_type: ModelTypes):
     print("Running training with:")
     print(staging_config)
 
@@ -159,7 +158,7 @@ def train_test(staging_config: StagingConfig):
     )
 
     model = create_model(
-        ModelTypes.pytorch_rnn,
+        model_type,
         staging_config,
         dataset_train,
         dataset_test,
@@ -174,4 +173,4 @@ def train_test(staging_config: StagingConfig):
 
 if __name__ == "__main__":
     staging_config = get_staging_config()
-    train_test(staging_config)
+    train_test(staging_config, ModelTypes.pytorch_rnn)
