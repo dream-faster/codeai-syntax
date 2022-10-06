@@ -6,7 +6,7 @@ from type import PytorchWrapperConfig
 from data.python_syntax.dataset import CodeSyntaxPredict
 
 import pandas as pd
-from utils import to_token_list
+from utils import syntax_error_tokenizer
 from typing import Tuple, List
 
 import os
@@ -37,7 +37,7 @@ def create_inference_dataset(strings: List[str]) -> pd.Series:
     return pd.Series(
         strings,
         dtype=str,
-    ).apply(lambda x: to_token_list(x, "type"))
+    ).apply(lambda x: syntax_error_tokenizer(x, "type"))
 
 
 def get_last_model_path() -> str:
