@@ -71,6 +71,7 @@ def create_model(
         )
 
     elif model_type == ModelTypes.lstm:
+        config = HFWrapperConfig(val_size=0.2, epochs=staging.epochs, batch_size=32)
         new_model = HFWrapper(
             "line-predictor",
             config,
@@ -120,12 +121,12 @@ def get_datasets(
     dataset_train = CodeSyntaxDataset(
         df_train,
         input_col=DataParams.token_id,
-        label_col=DataParams.fix_location,
+        label_cols=[DataParams.fix_location, DataParams.fix_type, DataParams.fix_token],
     )
     dataset_test = CodeSyntaxDataset(
         df_test,
         input_col=DataParams.token_id,
-        label_col=DataParams.fix_location,
+        label_cols=[DataParams.fix_location, DataParams.fix_type, DataParams.fix_token],
     )
 
     num_rows = df_train[DataParams.wrong_code.value].apply(lambda x: len(x)).to_list()

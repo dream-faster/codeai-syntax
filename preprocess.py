@@ -46,6 +46,9 @@ def preprocess(
     for string in df[DataParams.token_string.value].to_list():
         vocab.update(string)
 
+    vocab.update("PAD")
+    vocab.update("UNK")
+
     vocab = {s: i for i, s in enumerate(vocab)}
     df[DataParams.token_id.value] = df[DataParams.token_string.value].apply(
         lambda x: encode_with_vocab(vocab, x)
@@ -54,6 +57,19 @@ def preprocess(
     # Make fix_location more accessible
     df[DataParams.fix_location.value] = df[DataParams.metadata.value].apply(
         lambda x: x[DataParams.fix_location.value]
+    )
+
+    df[DataParams.fix_type.value] = df[DataParams.metadata.value].apply(
+        lambda x: x[DataParams.fix_type.value]
+    )
+
+    df[DataParams.fix_token.value] = df[DataParams.metadata.value].apply(
+        lambda x: encode_with_vocab(
+            vocab,
+            [x[DataParams.fix_token.value]]
+            if DataParams.fix_token.value in x.keys()
+            else ["None"],
+        )
     )
 
     # Split the data into train and test

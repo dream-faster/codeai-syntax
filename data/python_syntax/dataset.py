@@ -17,20 +17,20 @@ class CodeSyntaxDataset(Dataset):
         self,
         data: pd.DataFrame,
         input_col: DataParams,
-        label_col: DataParams,
+        label_cols: List[DataParams],
     ) -> None:
         self.input = data[input_col.value].apply(
             lambda x: [float(token) for token in x]
         )
-        self.label = data[label_col.value].astype(int)
+        self.label = [data[label_col.value].astype(int) for label_col in label_cols]
 
     def __len__(self):
         return len(self.input)
 
     def __getitem__(
         self, idx: int
-    ) -> Tuple[List[float], List[float]]:  # pd.Series, pd.Series]:
-        return self.input.iloc[idx], self.label.iloc[idx]
+    ) -> Tuple[List[float], List[List[float]]]:  # pd.Series, pd.Series]:
+        return self.input.iloc[idx], [label.iloc[idx] for label in self.label]
 
 
 class CodeSyntaxPredict(Dataset):

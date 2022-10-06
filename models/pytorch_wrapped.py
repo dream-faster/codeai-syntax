@@ -117,8 +117,11 @@ class LightningWrapper(pl.LightningModule):
 
     def training_step(self, train_batch:torch.Tensor, batch_idx)->torch.Tensor:
         x, y, length = train_batch
-        preds,logprobs, probs = self.model(x)
-        loss = self.criterion(logprobs.type(torch.float), y)
+        mod_location, mod_type, mod_token = self.model(x)
+        
+        loss = self.criterion(mod_location[1].type(torch.float), y.mod_location) + mod_location
+        
+        
         self.log("train_loss", loss)
         return loss
 

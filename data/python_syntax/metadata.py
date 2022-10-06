@@ -10,3 +10,5 @@ class DataParams(Enum):
     token_id = "token_id"
     token_string = "token_string"
     id = "id"
+    fix_type = "fix_type"
+    fix_token = "fix_token"
