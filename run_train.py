@@ -159,7 +159,7 @@ def train_test(staging_config: StagingConfig):
     )
 
     model = create_model(
-        ModelTypes.huggingface,
+        ModelTypes.pytorch_rnn,
         staging_config,
         dataset_train,
         dataset_test,
