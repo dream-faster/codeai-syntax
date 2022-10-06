@@ -22,19 +22,6 @@ class TrainDataStatistics:
     longest_programs_tokens: int
 
 
-# Load in data
-def train(model: Union[HFWrapper, PytorchWrapper]) -> Union[HFWrapper, PytorchWrapper]:
-
-    model.load()
-    model.fit()
-
-    return model
-
-
-def test(model: Union[HFWrapper, PytorchWrapper]):
-    model.test()
-
-
 def create_model(
     model_type: ModelTypes,
     staging: StagingConfig,
@@ -76,6 +63,15 @@ def create_model(
     elif model_type == ModelTypes.huggingface:
 
         config = HFWrapperConfig(val_size=0.2, epochs=staging.epochs, batch_size=32)
+        new_model = HFWrapper(
+            "line-predictor",
+            config,
+            encoding_vocab,
+            dataset_train,
+            dataset_test,
+        )
+
+    elif model_type == ModelTypes.lstm:
         new_model = HFWrapper(
             "line-predictor",
             config,
@@ -171,8 +167,9 @@ def train_test(staging_config: StagingConfig):
         encoding_vocab,
     )
 
-    trained_model = train(model)
-    test(trained_model)
+    model.load()
+    model.fit()
+    model.test()
 
 
 if __name__ == "__main__":

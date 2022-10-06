@@ -82,6 +82,7 @@ class HFWrapper:
             per_device_train_batch_size=8,
             per_device_eval_batch_size=8,
             num_train_epochs=2,
+            report_to="none",
         )
 
         self.evaluators: Optional[Evaluators] = evaluators

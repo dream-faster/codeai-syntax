@@ -22,3 +22,4 @@ class ExtensionTypes(Enum):
 class ModelTypes(Enum):
     huggingface = "huggingace"
     pytorch_rnn = "pytorch_rnn"
+    lstm = "lstm"
