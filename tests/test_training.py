@@ -2,13 +2,14 @@ from preprocess import preprocess
 from run_train import train_test
 from run_inference import run_inference
 from type import dev_config
+from constants import ModelTypes
 
 # 1. First we need to run the preprocessing on the dataset
 preprocess()
 
 
 def test_train_testing():
-    train_test(dev_config)
+    train_test(dev_config, ModelTypes.pytorch_rnn)
 
 
 def test_inference():

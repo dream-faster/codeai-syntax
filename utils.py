@@ -1,23 +1,46 @@
-from tokenize import tokenize, NUMBER, STRING, NAME, OP
+import tokenize
+
+# from tokenize import tokenize, generate_tokens, NUMBER, STRING, NAME, OP
 from io import BytesIO
-from typing import List, Optional
+from typing import List, Optional, Any
 import pandas as pd
 import numpy as np
 import os
+import io
+from constants import TokenTypes, ExtensionTypes
+import json
 
 
-def to_token_list(s: str, key: str) -> List:
+def syntax_error_tokenizer(
+    s: str, id: int, error_dict: dict, key: TokenTypes = TokenTypes.type
+) -> List[tokenize.TokenInfo]:
+
+    fp = io.StringIO(s)
+    filter_types = [tokenize.ENCODING, tokenize.ENDMARKER, tokenize.ERRORTOKEN]
+    tokens = []
+    token_gen = tokenize.generate_tokens(fp.readline)
+    while True:
+        try:
+            token = next(token_gen)
+            if token.string and token.type not in filter_types:
+                tokens.append(token._asdict()[key.value])
+        except tokenize.TokenError:
+            error_dict["TokenError"].append(id)
+            break
+        except StopIteration:
+            break
+        except IndentationError:
+            error_dict["IndentationError"].append(id)
+            continue
+    return tokens
+
+
+def to_token_list_correct_python(s: str, key: TokenTypes) -> List:
     tokens = []  # list of tokens extracted from source code.
 
-    g = tokenize(BytesIO(s.encode("utf-8")).readline)
-    for t in g:
+    g = tokenize.tokenize(BytesIO(s.encode("utf-8")).readline)
 
-        # if t.type == NUMBER and "." in t.string:  # replace NUMBER tokens
-        #     tokens.extend(
-        #         [(NAME, "Decimal"), (OP, "("), (STRING, repr(t.string)), (OP, ")")]
-        #     )
-        # else:
-        tokens.append(t._asdict()[key])  # (t.type, t.string, token.tok_name[t.type]))
+    tokens = [t._asdict()[key.value] for t in g]
 
     return list(tokens)
 
@@ -61,6 +84,30 @@ def write_dataframe(
         df[spec_columns][buckets[i] : buckets[min(len(buckets) - 1, i + 1)]].to_json(
             f"{path}/{name}{str(i)}.json"
         )
+
+
+def write_file(object: Any, path: str, name: str, extension: ExtensionTypes) -> None:
+    if os.path.exists(path) is False:
+        os.makedirs(path)
+
+    with open(f"{path}/{name}.{extension.value}", "w") as f:
+        write_obj = object
+        if extension == ExtensionTypes.json:
+            write_obj = json.dumps(object)
+
+        f.write(write_obj)
+
+
+def load_file(path: str, name: str, extension: ExtensionTypes) -> Any:
+    if os.path.exists(path) is False:
+        os.makedirs(path)
+
+    with open(f"{path}/{name}.{extension.value}", "r") as f:
+        load_obj = object
+        if extension == ExtensionTypes.json:
+            load_obj = json.load(f)
+
+    return load_obj
 
 
 def print_examples(df: pd.DataFrame, num_examples: int = 3) -> None:

@@ -38,6 +38,13 @@ class PytorchWrapperConfig:
 
 
 @dataclass
+class HFWrapperConfig:
+    val_size: float
+    epochs: int
+    batch_size: int
+
+
+@dataclass
 class StagingConfig:
     epochs: int
     limit_dataset: Optional[int] = None

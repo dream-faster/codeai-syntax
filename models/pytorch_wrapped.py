@@ -14,42 +14,7 @@ accelerator = "cuda" if torch.cuda.is_available() else "cpu"
 
 from type import EmbedType
 
-def hoc_collate(pad_length: Optional[int] = None, predict:bool=False) -> Callable:
-    def collate_fn_padd(
-        batch: List[Tuple[List[int], float]]
-    ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor, torch.Tensor]]:
-        """
-        Padds batch of variable length
-        """
-        if predict:
-            features = batch
-            features = [torch.tensor(t).type(torch.long).to(device) for t in features]
-            
-            ## 1. padd first element to given (constant length)
-            if pad_length is not None:
-                features[0] = nn.ConstantPad1d((0, pad_length - features[0].shape[0]), 0)(features[0])
-            features = torch.nn.utils.rnn.pad_sequence(features, batch_first=True).T.to(device)
-            
-            return features
-        else:
-            features, labels = zip(*batch)
-            ## Get sequence lengths
-            lengths = torch.tensor([len(t) for t in features]).to(device)
-            
-            ## 0. Convert input features to tensors.
-            features = [torch.tensor(t).type(torch.long).to(device) for t in features]
-            
-            ## 1. padd first element to given (constant length)
-            if pad_length is not None:
-                features[0] = nn.ConstantPad1d((0, pad_length - features[0].shape[0]), 0)(features[0])
-            
-            ## 2. Adjust padding for all other elements
-            features = torch.nn.utils.rnn.pad_sequence(features, batch_first=True).T.to(device)
-            labels = torch.Tensor(labels).type(torch.long).to(device).T
-
-            return features, labels, lengths
-
-    return collate_fn_padd
+from .utils import hoc_collate
 
 
 class PytorchWrapper:
@@ -58,10 +23,15 @@ class PytorchWrapper:
         id: str,
         config: PytorchWrapperConfig,
         model_to_wrap: nn.Module,
+        dataset_train:Optional[Dataset]=None,
+        dataset_test:Optional[Dataset]=None,
         evaluators: Optional[Evaluators] = None,
     ):
         self.config = config
         self.id = id
+        
+        self.dataset_train=dataset_train
+        self.dataset_test=dataset_test
         
         self.evaluators: Optional[Evaluators] = evaluators
         self.model_to_wrap = model_to_wrap
@@ -88,10 +58,10 @@ class PytorchWrapper:
         else:
             Exception("No Model could be loaded.")
               
-    def fit(self, dataset: Dataset) -> None:
-        val_size = int(len(dataset) * self.config.val_size)
-        train_size = len(dataset) - val_size
-        train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
+    def fit(self) -> None:
+        val_size = int(len(self.dataset_train) * self.config.val_size)
+        train_size = len(self.dataset_train) - val_size
+        train_dataset, val_dataset = random_split(self.dataset_train, [train_size, val_size])
 
         
         train_dataloader = DataLoader(
@@ -100,7 +70,6 @@ class PytorchWrapper:
         val_dataloader = DataLoader(
             val_dataset, batch_size=self.config.batch_size, collate_fn=hoc_collate(self.pad_length)
         )
-
 
         self.trainer.fit(self.model, train_dataloader, val_dataloader)
 
@@ -112,8 +81,8 @@ class PytorchWrapper:
         probs = torch.cat(probs)
         return preds, probs
     
-    def test(self, dataset:Dataset):
-        test_dataset = DataLoader(dataset, batch_size=self.config.batch_size, collate_fn=hoc_collate(self.pad_length))
+    def test(self):
+        test_dataset = DataLoader(self.dataset_test, batch_size=self.config.batch_size, collate_fn=hoc_collate(self.pad_length))
 
         self.trainer.test(self.model, test_dataset)
         results = self.model.test_results
@@ -148,7 +117,7 @@ class LightningWrapper(pl.LightningModule):
 
     def training_step(self, train_batch:torch.Tensor, batch_idx)->torch.Tensor:
         x, y, length = train_batch
-        preds,logprobs, probs=self.model(x)
+        preds,logprobs, probs = self.model(x)
         loss = self.criterion(logprobs.type(torch.float), y)
         self.log("train_loss", loss)
         return loss
