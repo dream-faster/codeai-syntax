@@ -23,8 +23,8 @@ class PytorchWrapper:
         id: str,
         config: PytorchWrapperConfig,
         model_to_wrap: nn.Module,
-        dataset_train:Dataset,
-        dataset_test:Dataset,
+        dataset_train:Optional[Dataset]=None,
+        dataset_test:Optional[Dataset]=None,
         evaluators: Optional[Evaluators] = None,
     ):
         self.config = config

@@ -32,7 +32,7 @@ def test_tokenizer():
         )
     )
 
-    assert df["tokenized"].iloc[0][0] == 62, "First element not correctly tokenized"
+    assert df["tokenized"].iloc[0][0] == 1, "First element not correctly tokenized"
 
 
 def test_preprocess_pipeline():
