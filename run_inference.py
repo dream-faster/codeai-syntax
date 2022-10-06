@@ -10,6 +10,7 @@ from utils import syntax_error_tokenizer
 from typing import Tuple, List
 
 import os
+from constants import TokenTypes
 
 
 # Load in data
@@ -34,10 +35,11 @@ def create_model(path: str) -> PytorchWrapper:
 
 
 def create_inference_dataset(strings: List[str]) -> pd.Series:
-    return pd.Series(
-        strings,
-        dtype=str,
-    ).apply(lambda x: syntax_error_tokenizer(x, "type"))
+    return pd.Series(strings, dtype=str,).apply(
+        lambda x: syntax_error_tokenizer(
+            x, 0, {"TokenError": [], "IndentationError": []}, key=TokenTypes.type
+        )
+    )
 
 
 def get_last_model_path() -> str:
