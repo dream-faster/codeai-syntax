@@ -8,7 +8,7 @@ from utils import (
 )
 from constants import CONST, TokenTypes, ExtensionTypes
 from data.python_syntax.metadata import DataParams
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, Union, Iterable
 from sklearn.model_selection import train_test_split
 
 
@@ -38,18 +38,20 @@ def preprocess(
         axis=1,
     )
 
-    def encode_with_vocab(vocab: dict, source_code: List[str]) -> List[int]:
-        return [vocab[string] for string in source_code]
+    def encode_with_vocab(vocab: dict, raw_strings: Union[str, List[str]]) -> List[int]:
+        if isinstance(raw_strings, str):
+            return vocab[raw_strings]
+        else:
+            return [vocab[string] for string in raw_strings]
 
     # Turn the list of strings split from the source code to a dictionary
-    vocab = set()
+    vocab_set = set()
     for string in df[DataParams.token_string.value].to_list():
-        vocab.update(string)
+        vocab_set.update(string)
 
-    vocab.update("PAD")
-    vocab.update("UNK")
-
-    vocab = {s: i for i, s in enumerate(vocab)}
+    vocab: dict = {s: i + 2 for i, s in enumerate(vocab_set)}
+    vocab["UNK"] = 1
+    vocab["PAD"] = 0
     df[DataParams.token_id.value] = df[DataParams.token_string.value].apply(
         lambda x: encode_with_vocab(vocab, x)
     )
@@ -63,12 +65,19 @@ def preprocess(
         lambda x: x[DataParams.fix_type.value]
     )
 
+    fix_type_set = set(df[DataParams.fix_type.value].to_list())
+    fix_type_vocab = {s: i for i, s in enumerate(fix_type_set)}
+
+    df[DataParams.fix_type.value] = df[DataParams.fix_type.value].apply(
+        lambda x: encode_with_vocab(fix_type_vocab, x)
+    )
+
     df[DataParams.fix_token.value] = df[DataParams.metadata.value].apply(
         lambda x: encode_with_vocab(
             vocab,
-            [x[DataParams.fix_token.value]]
+            x[DataParams.fix_token.value]
             if DataParams.fix_token.value in x.keys()
-            else ["None"],
+            else "UNK",
         )
     )
 

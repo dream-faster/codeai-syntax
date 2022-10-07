@@ -119,17 +119,28 @@ class LightningWrapper(pl.LightningModule):
         x, y, length = train_batch
         mod_location, mod_type, mod_token = self.model(x)
         
-        loss = self.criterion(mod_location[1].type(torch.float), y.mod_location) + mod_location
+        y_mod_location, y_mod_type, y_mod_token = y
         
+        loss = self.criterion(mod_location[1].type(torch.float), y_mod_location) \
+            + self.criterion(mod_type[1].type(torch.float), y_mod_type)\
+            + self.criterion(mod_token[1].type(torch.float), y_mod_token)
         
         self.log("train_loss", loss)
         return loss
 
-    def validation_step(self, val_batch, batch_idx):
+    def validation_step(self, val_batch:torch.Tensor, batch_idx)->torch.Tensor:
         x, y, length = val_batch
-        preds,logprobs, probs=self.model(x)
-        loss = self.criterion(logprobs.type(torch.float), y)
+        mod_location, mod_type, mod_token = self.model(x)
+        
+        y_mod_location, y_mod_type, y_mod_token = y
+        
+        loss = self.criterion(mod_location[1].type(torch.float).squeeze(), y_mod_location) \
+            + self.criterion(mod_type[1].type(torch.float), y_mod_type)\
+            + self.criterion(mod_token[1].type(torch.float), y_mod_token)
+        
         self.log("val_loss", loss)
+        return loss
+
 
     def test_step(self, test_batch, batch_idx):
         x, y, length = test_batch
