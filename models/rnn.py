@@ -73,13 +73,17 @@ class Classifier(nn.Module):
             [data[location, :] for data, location in zip(encoded, location_preds)]
         )
 
-        type_logprobs = self.logsoftmax(self.type_predictor(selected_hidden))
+        type_logprobs = self.logsoftmax(
+            self.type_predictor(selected_hidden).squeeze(dim=1)
+        )
         type_preds = torch.argmax(type_logprobs, dim=1)
         type_probs = torch.exp(type_logprobs)
 
         mod_type = (type_preds, type_logprobs, type_probs)
 
-        token_logprobs = self.logsoftmax(self.token_predictor(selected_hidden))
+        token_logprobs = self.logsoftmax(
+            self.token_predictor(selected_hidden).squeeze(dim=1)
+        )
         token_preds = torch.argmax(type_logprobs, dim=1)
         token_probs = torch.exp(type_logprobs)
 
